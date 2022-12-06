@@ -29,6 +29,10 @@
             "development": "./src/Color.dev.js",
             "default": "./src/Color.js"
         },
+        "./src/ColorV2.js": {
+            "development": "./src/ColorV2.dev.js",
+            "default": "./src/ColorV2.js"
+        },
         "./src/ElementResolution.js": {
             "development": "./src/ElementResolution.dev.js",
             "default": "./src/ElementResolution.js"
@@ -72,6 +76,7 @@
         "reactive controllers"
     ],
     "dependencies": {
+        "colorjs.io": "^0.4.2",
         "lit": "^2.5.0"
     },
     "types": "./src/index.d.ts",

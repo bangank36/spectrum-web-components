@@ -28,8 +28,8 @@ import type { ColorHandle } from '@spectrum-web-components/color-handle';
 import '@spectrum-web-components/color-handle/sp-color-handle.js';
 import {
     ColorController,
-    ColorValue,
-} from '@spectrum-web-components/reactive-controllers/src/Color.js';
+    ColorTypes,
+} from '@spectrum-web-components/reactive-controllers/src/ColorV2.js';
 
 import styles from './color-area.css.js';
 
@@ -62,17 +62,7 @@ export class ColorArea extends SpectrumElement {
     @query('.handle')
     private handle!: ColorHandle;
 
-    private colorController = new ColorController(this, {
-        extractColorFromState: () => ({
-            h: this.hue,
-            s: this.x,
-            v: 1 - this.y,
-        }),
-        applyColorToState: ({ s, v }) => {
-            this.x = s;
-            this.y = 1 - v;
-        },
-    });
+    private colorController = new ColorController(this, { manageAs: 'hsv' });
 
     @property({ type: Number })
     public get hue(): number {
@@ -84,16 +74,16 @@ export class ColorArea extends SpectrumElement {
     }
 
     @property({ type: String })
-    public get value(): ColorValue {
-        return this.colorController.color;
+    public get value(): ColorTypes {
+        return this.colorController.colorValue;
     }
 
     @property({ type: String })
-    public get color(): ColorValue {
-        return this.colorController.color;
+    public get color(): ColorTypes {
+        return this.colorController.colorValue;
     }
 
-    public set color(color: ColorValue) {
+    public set color(color: ColorTypes) {
         this.colorController.color = color;
     }
 
@@ -102,7 +92,7 @@ export class ColorArea extends SpectrumElement {
 
     @property({ type: Number })
     public get x(): number {
-        return this._x;
+        return this.colorController.color.hsv.s / 100;
     }
 
     public set x(x: number) {
@@ -113,18 +103,19 @@ export class ColorArea extends SpectrumElement {
         if (this.inputX) {
             // Use the native `input[type='range']` control to validate this value after `firstUpdate`
             this.inputX.value = x.toString();
-            this._x = this.inputX.valueAsNumber;
+            this.colorController.color.set(
+                's',
+                this.inputX.valueAsNumber * 100
+            );
         } else {
-            this._x = x;
+            this.colorController.color.set('s', x * 100);
         }
         this.requestUpdate('x', oldValue);
     }
 
-    private _x = 1;
-
     @property({ type: Number })
     public get y(): number {
-        return this._y;
+        return 1 - this.colorController.color.hsv.v / 100;
     }
 
     public set y(y: number) {
@@ -135,14 +126,15 @@ export class ColorArea extends SpectrumElement {
         if (this.inputY) {
             // Use the native `input[type='range']` control to validate this value after `firstUpdate`
             this.inputY.value = y.toString();
-            this._y = this.inputY.valueAsNumber;
+            this.colorController.color.set(
+                'v',
+                (1 - this.inputY.valueAsNumber) * 100
+            );
         } else {
-            this._y = y;
+            this.colorController.color.set('v', (1 - y) * 100);
         }
         this.requestUpdate('y', oldValue);
     }
-
-    private _y = 0;
 
     @property({ type: Number })
     public step = 0.01;
@@ -230,7 +222,6 @@ export class ColorArea extends SpectrumElement {
         this.y = Math.min(1, Math.max(this.y + deltaY, 0));
 
         this.colorController.savePreviousColor();
-        this.colorController.applyColorFromState();
 
         if (deltaX != 0 || deltaY != 0) {
             this.dispatchEvent(
@@ -262,7 +253,6 @@ export class ColorArea extends SpectrumElement {
         const { valueAsNumber, name } = event.target;
 
         this[name as 'x' | 'y'] = valueAsNumber;
-        this.colorController.applyColorFromState();
     }
 
     private handleChange(event: Event & { target: HTMLInputElement }): void {
@@ -298,7 +288,6 @@ export class ColorArea extends SpectrumElement {
 
         this.x = x;
         this.y = y;
-        this.colorController.applyColorFromState();
         this.dispatchEvent(
             new Event('input', {
                 bubbles: true,
@@ -407,7 +396,10 @@ export class ColorArea extends SpectrumElement {
                 ${streamingListener({
                     start: ['pointerdown', this.handlePointerdown],
                     streamInside: ['pointermove', this.handlePointermove],
-                    end: [['pointerup', 'pointercancel'], this.handlePointerup],
+                    end: [
+                        ['pointerup', 'pointercancel', 'pointerleave'],
+                        this.handlePointerup,
+                    ],
                 })}
             ></sp-color-handle>
 
@@ -457,10 +449,16 @@ export class ColorArea extends SpectrumElement {
     protected override updated(changed: PropertyValues): void {
         super.updated(changed);
         if (this.x !== this.inputX.valueAsNumber) {
-            this._x = this.inputX.valueAsNumber;
+            this.colorController.color.set(
+                's',
+                this.inputX.valueAsNumber * 100
+            );
         }
         if (this.y !== this.inputY.valueAsNumber) {
-            this._y = this.inputY.valueAsNumber;
+            this.colorController.color.set(
+                'v',
+                (1 - this.inputY.valueAsNumber) * 100
+            );
         }
         if (changed.has('focused') && this.focused) {
             // Lazily bind the `input[type="range"]` elements in shadow roots

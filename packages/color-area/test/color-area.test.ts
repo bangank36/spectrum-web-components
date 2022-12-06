@@ -18,7 +18,7 @@ import {
     nextFrame,
     oneEvent,
 } from '@open-wc/testing';
-import { HSL, HSLA, HSV, HSVA, RGB, RGBA, TinyColor } from '@ctrl/tinycolor';
+import { TinyColor } from '@ctrl/tinycolor';
 
 import '@spectrum-web-components/color-area/sp-color-area.js';
 import { ColorArea } from '@spectrum-web-components/color-area';
@@ -26,6 +26,7 @@ import { sendKeys } from '@web/test-runner-commands';
 import { spy } from 'sinon';
 import { ColorHandle } from '@spectrum-web-components/color-handle';
 import { testForLitDevWarnings } from '../../../test/testing-helpers.js';
+import { ColorTypes } from '@spectrum-web-components/reactive-controllers/src/ColorV2.js';
 
 describe('ColorArea', () => {
     testForLitDevWarnings(
@@ -81,6 +82,9 @@ describe('ColorArea', () => {
         await sendKeys({
             press: 'ArrowRight',
         });
+        await sendKeys({
+            press: 'ArrowRight',
+        });
         await elementUpdated(el);
         expect(el.value).to.not.equal(value);
         await sendKeys({
@@ -98,6 +102,9 @@ describe('ColorArea', () => {
         expect(document.activeElement, 'element again').to.equal(el);
 
         value = el.value;
+        await sendKeys({
+            press: 'ArrowDown',
+        });
         await sendKeys({
             press: 'ArrowDown',
         });
@@ -145,13 +152,13 @@ describe('ColorArea', () => {
 
         const { handle } = el as unknown as { handle: ColorHandle };
 
-        expect(handle.color).to.equal('hsl(0, 100%, 50%)');
+        expect(handle.color).to.equal('hsl(0 100% 50%)');
 
         el.hue = 125;
 
         await elementUpdated(el);
 
-        expect(handle.color).to.equal('hsl(125, 100%, 50%)');
+        expect(handle.color).to.equal('hsl(125 100% 50%)');
     });
     it('accepts "color" values as hsl', async () => {
         const el = await fixture<ColorArea>(
@@ -179,7 +186,7 @@ describe('ColorArea', () => {
         expect(el.x, 'ex').to.equal(0.67);
         expect(el.y, 'why').to.equal(0.25);
 
-        el.color = 'hsla(120, 100%, 0, 1)';
+        el.color = 'hsla(120, 100%, 0%, 1)';
         await elementUpdated(el);
 
         expect(el.hue, 'hue 2').to.equal(120);
@@ -238,7 +245,7 @@ describe('ColorArea', () => {
         await changeEvent;
 
         expect(el.x).to.equal(0.67);
-        expect(el.y).to.equal(0.23);
+        expect(el.y).to.equal(0.22999999999999998);
 
         changeEvent = oneEvent(el, 'change');
         await sendKeys({
@@ -252,7 +259,7 @@ describe('ColorArea', () => {
         await changeEvent;
 
         expect(el.x).to.equal(0.69);
-        expect(el.y).to.equal(0.23);
+        expect(el.y).to.equal(0.22999999999999998);
 
         changeEvent = oneEvent(el, 'change');
         await sendKeys({
@@ -285,7 +292,7 @@ describe('ColorArea', () => {
     it('accepts "Arrow*" keypresses with alteration', async () => {
         const el = await fixture<ColorArea>(
             html`
-                <sp-color-area color="hsla(100, 50%, 50%, 1)"></sp-color-area>
+                <sp-color-area color="hsl(100, 50%, 50%)"></sp-color-area>
             `
         );
 
@@ -312,7 +319,7 @@ describe('ColorArea', () => {
 
         expect(el.color).to.equal('hsl(100, 65%, 57%)');
         expect(el.x, 'first').to.equal(0.67);
-        expect(el.y).to.equal(0.15);
+        expect(el.y).to.equal(0.15000000000000002);
 
         await sendKeys({
             press: 'ArrowRight',
@@ -325,7 +332,7 @@ describe('ColorArea', () => {
 
         expect(el.color).to.equal('hsl(100, 69%, 52%)');
         expect(el.x).to.equal(0.77);
-        expect(el.y).to.equal(0.15);
+        expect(el.y).to.equal(0.15000000000000002);
 
         await sendKeys({
             press: 'ArrowDown',
@@ -609,14 +616,17 @@ describe('ColorArea', () => {
         await elementUpdated(el);
 
         let outputColor = el.color as { h: number; s: number; l: number };
-        const variance = 0.00005;
+        const variance = 0.004;
 
         expect(el.hue).to.equal(100);
         expect(el.x, 'x').to.equal(0.67);
         expect(el.y, 'y').to.equal(0.25);
 
         expect(Math.abs(outputColor.h - inputColor.h)).to.be.lessThan(variance);
-        expect(Math.abs(outputColor.s - inputColor.s)).to.be.lessThan(variance);
+        expect(
+            Math.abs(outputColor.s - inputColor.s),
+            `${outputColor.s} ${inputColor.s}`
+        ).to.be.lessThan(variance);
         expect(Math.abs(outputColor.l - inputColor.l)).to.be.lessThan(variance);
 
         inputColor = { h: 100, s: 0, l: 0.5 };
@@ -693,16 +703,8 @@ describe('ColorArea', () => {
     });
     const colorFormats: {
         name: string;
-        color:
-            | string
-            | number
-            | TinyColor
-            | HSVA
-            | HSV
-            | RGB
-            | RGBA
-            | HSL
-            | HSLA;
+        color: ColorTypes;
+        test?: ColorTypes;
     }[] = [
         //rgb
         { name: 'RGB String', color: 'rgb(204, 51, 204)' },
@@ -717,10 +719,13 @@ describe('ColorArea', () => {
         { name: 'Hex8', color: 'cc33ccff' },
         { name: 'Hex8 String', color: '#cc33ccff' },
         // name
-        { name: 'string', color: 'red' },
+        { name: 'string', color: 'red', test: 'rgb(255, 0, 0)' },
         // hsl
         { name: 'HSL String', color: 'hsl(300, 60%, 50%)' },
-        { name: 'HSL', color: { h: 300, s: 0.6000000000000001, l: 0.5, a: 1 } },
+        {
+            name: 'HSL',
+            color: { h: 300, s: 0.6000000000000001, l: 0.49, a: 1 },
+        },
         // hsv
         { name: 'HSV String', color: 'hsv(300, 75%, 100%)' },
         { name: 'HSV', color: { h: 300, s: 0.75, v: 1, a: 1 } },
@@ -733,10 +738,23 @@ describe('ColorArea', () => {
                 `
             );
 
-            el.color = format.color;
+            if (typeof format.color === 'string') {
+                el.color = format.color;
+            } else {
+                el.color = { ...format.color } as ColorTypes;
+            }
             if (format.name.startsWith('Hex')) {
-                expect(el.color).to.equal(format.color);
-            } else expect(el.color).to.deep.equal(format.color);
+                expect(el.color, el.color.toString()).to.equal(
+                    format.test || format.color
+                );
+            } else {
+                expect(
+                    el.color,
+                    `${JSON.stringify(el.color)} ${JSON.stringify(
+                        format.color
+                    )}`
+                ).to.deep.equal(format.test || format.color);
+            }
         });
     });
     it(`maintains \`color\` format as TinyColor`, async () => {

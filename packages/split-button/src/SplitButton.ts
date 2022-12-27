@@ -85,10 +85,6 @@ export class SplitButton extends SizedMixin(PickerBase) {
         return this.button;
     }
 
-    protected override sizePopover(popover: HTMLElement): void {
-        popover.style.setProperty('min-width', `${this.offsetWidth}px`);
-    }
-
     private passClick(): void {
         const target =
             this.type === 'more'
@@ -179,6 +175,7 @@ export class SplitButton extends SizedMixin(PickerBase) {
         }
         return html`
             ${buttons}
+            ${this.renderOverlay}
         `;
     }
 

@@ -65,7 +65,9 @@ export class Menu extends SpectrumElement {
         return [menuStyles];
     }
 
-    public isSubmenu = false;
+    private get isSubmenu(): boolean {
+        return this.slot === 'submenu';
+    }
 
     @property({ type: String, reflect: true })
     public label = '';
@@ -167,31 +169,14 @@ export class Menu extends SpectrumElement {
     private onFocusableItemAddedOrUpdated(
         event: MenuItemAddedOrUpdatedEvent
     ): void {
-        if (event.item.menuData.focusRoot) {
-            // Only have one tab stop per Menu tree
-            this.tabIndex = -1;
+        event.menuCascade.set(this, {
+            hadFocusRoot: !!event.focusRoot,
+            ancestorWithSelects: event.currentAncestorWithSelects,
+        });
+        if (this.selects) {
+            event.currentAncestorWithSelects = this;
         }
         event.focusRoot = this;
-        this.addChildItem(event.item);
-
-        if (this.selects === 'inherit') {
-            this.resolvedSelects = 'inherit';
-            this.resolvedRole = (event.currentAncestorWithSelects?.getAttribute(
-                'role'
-            ) ||
-                this.getAttribute('role') ||
-                undefined) as RoleType;
-        } else if (this.selects) {
-            this.resolvedRole = (this.getAttribute('role') ||
-                undefined) as RoleType;
-            this.resolvedSelects = this.selects;
-            event.currentAncestorWithSelects = this;
-        } else {
-            this.resolvedRole = (this.getAttribute('role') ||
-                undefined) as RoleType;
-            this.resolvedSelects =
-                this.resolvedRole === 'none' ? 'ignore' : 'none';
-        }
     }
 
     /**
@@ -204,12 +189,39 @@ export class Menu extends SpectrumElement {
     private onSelectableItemAddedOrUpdated(
         event: MenuItemAddedOrUpdatedEvent
     ): void {
+        const cascadeData = event.menuCascade.get(this);
+        if (!cascadeData) return;
+
+        if (cascadeData.hadFocusRoot) {
+            // Only have one tab stop per Menu tree
+            this.tabIndex = -1;
+        }
+        this.addChildItem(event.item);
+
+        if (this.selects === 'inherit') {
+            this.resolvedSelects = 'inherit';
+            this.resolvedRole = (cascadeData.ancestorWithSelects?.getAttribute(
+                'role'
+            ) ||
+                this.getAttribute('role') ||
+                undefined) as RoleType;
+        } else if (this.selects) {
+            this.resolvedRole = (this.getAttribute('role') ||
+                undefined) as RoleType;
+            this.resolvedSelects = this.selects;
+        } else {
+            this.resolvedRole = (this.getAttribute('role') ||
+                undefined) as RoleType;
+            this.resolvedSelects =
+                this.resolvedRole === 'none' ? 'ignore' : 'none';
+        }
+
         const selects =
             this.resolvedSelects === 'single' ||
             this.resolvedSelects === 'multiple';
         if (
             (selects || (!this.selects && this.resolvedSelects !== 'ignore')) &&
-            !event.item.menuData.selectionRoot
+            !event.selectionRoot
         ) {
             event.item.setRole(this.childRole);
             event.selectionRoot = this;
@@ -268,7 +280,7 @@ export class Menu extends SpectrumElement {
         }
         this.focusMenuItemByOffset(0);
         super.focus({ preventScroll });
-        const selectedItem = this.querySelector('[selected]');
+        const selectedItem = this.selectedItems[0];
         if (selectedItem && !preventScroll) {
             selectedItem.scrollIntoView({ block: 'nearest' });
         }
@@ -312,12 +324,11 @@ export class Menu extends SpectrumElement {
     }
 
     public handleFocusin(event: FocusEvent): void {
-        const isOrContainsRelatedTarget = elementIsOrContains(
+        const wasOrContainedRelatedTarget = elementIsOrContains(
             this,
             event.relatedTarget as Node
         );
         if (
-            isOrContainsRelatedTarget ||
             this.childItems.some(
                 (childItem) => childItem.menuData.focusRoot !== this
             )
@@ -330,7 +341,7 @@ export class Menu extends SpectrumElement {
         const selectionRoot =
             this.childItems[this.focusedItemIndex]?.menuData.selectionRoot ||
             this;
-        if (activeElement !== selectionRoot || !isOrContainsRelatedTarget) {
+        if (activeElement !== selectionRoot || !wasOrContainedRelatedTarget) {
             selectionRoot.focus({ preventScroll: true });
             if (activeElement && this.focusedItemIndex === 0) {
                 const offset = this.childItems.findIndex(
@@ -362,7 +373,12 @@ export class Menu extends SpectrumElement {
             )
         ) {
             const focusedItem = this.childItems[this.focusedItemIndex];
-            if (focusedItem) {
+            if (
+                focusedItem &&
+                !event
+                    .composedPath()
+                    .find((el) => el === focusedItem.menuData.focusRoot)
+            ) {
                 focusedItem.focused = false;
             }
         }
@@ -457,7 +473,8 @@ export class Menu extends SpectrumElement {
         itemToFocus.scrollIntoView({ block: 'nearest' });
     }
 
-    protected navigateBetweenRelatedMenus(code: string): void {
+    protected navigateBetweenRelatedMenus(event: KeyboardEvent): void {
+        const { code } = event;
         const shouldOpenSubmenu =
             (this.isLTR && code === 'ArrowRight') ||
             (!this.isLTR && code === 'ArrowLeft');
@@ -465,15 +482,18 @@ export class Menu extends SpectrumElement {
             (this.isLTR && code === 'ArrowLeft') ||
             (!this.isLTR && code === 'ArrowRight');
         if (shouldOpenSubmenu) {
+            event.stopPropagation();
             const lastFocusedItem = this.childItems[this.focusedItemIndex];
             if (lastFocusedItem?.hasSubmenu) {
                 // Remove focus while opening overlay from keyboard or the visible focus
                 // will slip back to the first item in the menu.
-                this.blur();
+                // this.blur();
                 lastFocusedItem.openOverlay();
             }
         } else if (shouldCloseSelfAsSubmenu && this.isSubmenu) {
+            event.stopPropagation();
             this.dispatchEvent(new Event('close', { bubbles: true }));
+            this.updateSelectedItemIndex();
         }
     }
 
@@ -488,7 +508,7 @@ export class Menu extends SpectrumElement {
             if (lastFocusedItem?.hasSubmenu) {
                 // Remove focus while opening overlay from keyboard or the visible focus
                 // will slip back to the first item in the menu.
-                this.blur();
+                // this.blur();
                 lastFocusedItem.openOverlay();
                 return;
             }
@@ -501,7 +521,7 @@ export class Menu extends SpectrumElement {
             this.navigateWithinMenu(event);
             return;
         }
-        this.navigateBetweenRelatedMenus(code);
+        this.navigateBetweenRelatedMenus(event);
     }
 
     public focusMenuItemByOffset(offset: number): MenuItem {
@@ -623,7 +643,12 @@ export class Menu extends SpectrumElement {
         if (item.menuData.focusRoot !== this) {
             return;
         }
-        item.focused = this.hasVisibleFocusInTree();
+        const focused =
+            this.hasVisibleFocusInTree() ||
+            !!this.childItems.find((child) => {
+                return child.hasVisibleFocusInTree();
+            });
+        item.focused = focused;
         this.setAttribute('aria-activedescendant', item.id);
         if (
             item.menuData.selectionRoot &&

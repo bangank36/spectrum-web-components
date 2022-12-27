@@ -105,11 +105,12 @@ export const wrapperDismissable = (
     return html`
         <sp-dialog-wrapper
             ?open=${open}
-            hero=${landscape}
+            .hero=${landscape}
             dismissable
             headline="Wrapped Dialog w/ Hero Image"
             @close=${handleClose(args)}
             size="s"
+            tabindex="0"
         >
             Content of the dialog
         </sp-dialog-wrapper>

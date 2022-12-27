@@ -61,12 +61,11 @@ class SubmenuReady extends HTMLElement {
         if (!submenu) {
             return;
         }
+
         submenu.addEventListener('sp-opened', this.handleSubmenuOpened, {
             once: true,
         });
-        submenu.dispatchEvent(
-            new PointerEvent('pointerenter', { bubbles: true, composed: true })
-        );
+        submenu.click();
     };
 
     handleSubmenuOpened = async (event: Event): Promise<void> => {
@@ -80,9 +79,7 @@ class SubmenuReady extends HTMLElement {
         submenu.addEventListener('sp-opened', this.handleSubmenuChildOpened, {
             once: true,
         });
-        submenu.dispatchEvent(
-            new PointerEvent('pointerenter', { bubbles: true, composed: true })
-        );
+        submenu.click();
     };
 
     handleSubmenuChildOpened = async (event: Event): Promise<void> => {

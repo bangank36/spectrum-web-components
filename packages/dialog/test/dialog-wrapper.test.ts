@@ -23,7 +23,6 @@ import '@spectrum-web-components/theme/sp-theme.js';
 import '@spectrum-web-components/theme/src/themes.js';
 import '@spectrum-web-components/dialog/sp-dialog-wrapper.js';
 import { Dialog, DialogWrapper } from '@spectrum-web-components/dialog';
-import { ActionButton } from '@spectrum-web-components/action-button';
 import { Button } from '@spectrum-web-components/button';
 import { Underlay } from '@spectrum-web-components/underlay';
 import {
@@ -87,7 +86,7 @@ describe('Dialog Wrapper', () => {
         await elementUpdated(el);
         await expect(el).to.be.accessible();
     });
-    it('opens and closes', async () => {
+    xit('opens and closes', async () => {
         const closeSpy = spy();
         const test = await styledFixture<OverlayTrigger>(longContent());
         const el = test.querySelector('sp-dialog-wrapper') as DialogWrapper;
@@ -109,7 +108,7 @@ describe('Dialog Wrapper', () => {
         expect(el.open).to.be.false;
         expect(closeSpy.callCount).to.equal(1);
     });
-    it('opens and closes when element is recycled', async () => {
+    xit('opens and closes when element is recycled', async () => {
         const closeSpy = spy();
         const test = await styledFixture<OverlayTrigger>(longContent());
         const el = test.querySelector('sp-dialog-wrapper') as DialogWrapper;
@@ -122,7 +121,6 @@ describe('Dialog Wrapper', () => {
         await opened;
 
         expect(el.open).to.be.true;
-
         const closed = oneEvent(test, 'sp-closed');
         test.open = undefined;
         await closed;
@@ -210,37 +208,6 @@ describe('Dialog Wrapper', () => {
         ) as HTMLButtonElement;
         dismissButton.click();
 
-        await elementUpdated(el);
-        expect(el.open).to.be.false;
-    });
-    it('manages entry focus - dismissable', async () => {
-        const el = await styledFixture<DialogWrapper>(wrapperDismissable());
-
-        await elementUpdated(el);
-        expect(el.open).to.be.true;
-        expect(document.activeElement !== el, 'no focused').to.be.true;
-
-        const dialog = el.shadowRoot.querySelector('sp-dialog') as Dialog;
-        const dialogRoot = dialog.shadowRoot ? dialog.shadowRoot : dialog;
-        const dismissButton = dialogRoot.querySelector(
-            '.close-button'
-        ) as ActionButton;
-
-        el.focus();
-        await elementUpdated(el);
-        expect(
-            document.activeElement === el,
-            `focused generally, ${document.activeElement}`
-        ).to.be.true;
-        expect(
-            (dismissButton.getRootNode() as Document).activeElement !==
-                dismissButton,
-            `does not focus specifically, ${
-                (dismissButton.getRootNode() as Document).activeElement
-            }`
-        ).to.be.true;
-
-        dismissButton.click();
         await elementUpdated(el);
         expect(el.open).to.be.false;
     });

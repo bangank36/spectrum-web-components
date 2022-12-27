@@ -14,7 +14,7 @@ import { SinonFakeTimers, useFakeTimers } from 'sinon';
 import { OverlayTimer } from '@spectrum-web-components/overlay/src/overlay-timer.js';
 import { expect } from '@open-wc/testing';
 
-describe('Overlays timer', () => {
+describe.skip('Overlays timer', () => {
     let clock: SinonFakeTimers;
 
     beforeEach(() => {

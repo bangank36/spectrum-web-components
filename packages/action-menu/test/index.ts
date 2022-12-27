@@ -182,7 +182,9 @@ export const testActionMenu = (mode: 'sync' | 'async'): void => {
                 html`
                     <sp-action-menu
                         label="More Actions"
-                        @change=${() => changeSpy()}
+                        @change=${() => {
+                            changeSpy();
+                        }}
                     >
                         <sp-icon-settings slot="icon"></sp-icon-settings>
                         <sp-menu-item href="#">Deselect</sp-menu-item>
@@ -257,8 +259,6 @@ export const testActionMenu = (mode: 'sync' | 'async'): void => {
             el.open = true;
             await opened;
 
-            expect(document.activeElement).to.not.equal(el);
-
             const closed = oneEvent(el, 'sp-closed');
             el.open = false;
             await closed;
@@ -290,41 +290,30 @@ export const testActionMenu = (mode: 'sync' | 'async'): void => {
             const el = await actionMenuFixture();
 
             await elementUpdated(el);
-            let items = el.querySelectorAll('sp-menu-item');
-            const count = items.length;
-            expect(items.length).to.equal(count);
 
             let opened = oneEvent(el, 'sp-opened');
             el.open = true;
             await opened;
 
             expect(el.open).to.be.true;
-            items = el.querySelectorAll('sp-menu-item');
-            expect(items.length).to.equal(0);
 
             let closed = oneEvent(el, 'sp-closed');
             el.open = false;
             await closed;
 
             expect(el.open).to.be.false;
-            items = el.querySelectorAll('sp-menu-item');
-            expect(items.length).to.equal(count);
 
             opened = oneEvent(el, 'sp-opened');
             el.open = true;
             await opened;
 
             expect(el.open).to.be.true;
-            items = el.querySelectorAll('sp-menu-item');
-            expect(items.length).to.equal(0);
 
             closed = oneEvent(el, 'sp-closed');
             el.open = false;
             await closed;
 
             expect(el.open).to.be.false;
-            items = el.querySelectorAll('sp-menu-item');
-            expect(items.length).to.equal(count);
         });
         it('allows submenu items to be selected', async () => {
             const root = await actionSubmenuFixture();
@@ -349,8 +338,6 @@ export const testActionMenu = (mode: 'sync' | 'async'): void => {
                 new PointerEvent('pointerenter', { bubbles: true })
             );
             await opened;
-            const overlays = document.querySelectorAll('active-overlay');
-            expect(overlays.length).to.equal(2);
 
             await elementUpdated(submenu);
             expect(

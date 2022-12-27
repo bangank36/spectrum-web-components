@@ -29,14 +29,14 @@ import {
 } from '@spectrum-web-components/shared/src/platform.js';
 
 import {
-    OverlayOpenCloseDetail,
     OverlayOptions,
     OverlayTriggerInteractions,
-    Placement,
     TriggerInteractions,
 } from './overlay-types';
 import { openOverlay } from './loader.js';
 import overlayTriggerStyles from './overlay-trigger.css.js';
+import '../sp-overlay.js';
+import { Placement } from '@floating-ui/dom';
 
 export type OverlayContentTypes = 'click' | 'hover' | 'longpress';
 
@@ -76,7 +76,7 @@ export class OverlayTrigger extends SpectrumElement {
      * @attr
      */
     @property({ reflect: true })
-    public placement: Placement = 'bottom';
+    public placement?: Placement = 'bottom';
 
     @property()
     public type?: OverlayTriggerInteractions;
@@ -97,20 +97,16 @@ export class OverlayTrigger extends SpectrumElement {
     private clickContent?: HTMLElement;
     private longpressContent?: HTMLElement;
     private hoverContent?: HTMLElement;
-    private targetContent?: HTMLElement;
-    private overlaidContent?: HTMLElement;
+
+    @state()
+    private targetContent!: HTMLElement;
 
     private _longpressId = `longpress-describedby-descriptor`;
 
-    private handleClose(event?: CustomEvent<OverlayOpenCloseDetail>): void {
-        if (
-            event &&
-            event.detail.interaction !== this.open &&
-            event.detail.interaction !== this.type
-        ) {
-            return;
-        }
-        this.removeAttribute('open');
+    private handleTriggerChange(
+        event: Event & { target: HTMLSlotElement }
+    ): void {
+        this.targetContent = event.target.assignedElements()[0] as HTMLElement;
     }
 
     protected override render(): TemplateResult {
@@ -119,29 +115,40 @@ export class OverlayTrigger extends SpectrumElement {
         return html`
             <slot
                 id="trigger"
-                @click=${this.onTrigger}
-                @longpress=${this.onTrigger}
-                @mouseenter=${this.onTrigger}
-                @mouseleave=${this.onTrigger}
-                @focusin=${this.onTrigger}
-                @focusout=${this.onTrigger}
-                @sp-closed=${this.handleClose}
-                @slotchange=${this.onTargetSlotChange}
                 name="trigger"
+                @slotchange=${this.handleTriggerChange}
             ></slot>
             <div id="overlay-content">
-                <slot
-                    @slotchange=${this.onClickSlotChange}
-                    name="click-content"
-                ></slot>
-                <slot
-                    @slotchange=${this.onLongpressSlotChange}
-                    name="longpress-content"
-                ></slot>
-                <slot
-                    @slotchange=${this.onHoverSlotChange}
-                    name="hover-content"
-                ></slot>
+                <sp-overlay
+                    ?open=${this.open === 'click'}
+                    .offset=${this.offset}
+                    .placement=${this.placement}
+                    .triggerElement=${this.targetContent}
+                    .triggerInteraction=${'click'}
+                    .type=${this.type !== 'modal' ? 'auto' : 'modal'}
+                >
+                    <slot name="click-content"></slot>
+                </sp-overlay>
+                <sp-overlay
+                    ?open=${this.open === 'longpress'}
+                    .offset=${this.offset}
+                    .placement=${this.placement}
+                    .triggerElement=${this.targetContent}
+                    .triggerInteraction=${'longpress'}
+                    .type=${'auto'}
+                >
+                    <slot name="longpress-content"></slot>
+                </sp-overlay>
+                <sp-overlay
+                    ?open=${this.open === 'hover'}
+                    .offset=${this.offset}
+                    .placement=${this.placement}
+                    .triggerElement=${this.targetContent}
+                    .triggerInteraction=${'hover'}
+                    .type=${'hint'}
+                >
+                    <slot name="hover-content"></slot>
+                </sp-overlay>
                 <slot name=${this._longpressId}></slot>
             </div>
         `;
@@ -210,7 +217,6 @@ export class OverlayTrigger extends SpectrumElement {
             delete this[name];
             (await canClose)();
         });
-        this.overlaidContent = undefined;
     }
 
     private manageOpen(): void {
@@ -239,7 +245,6 @@ export class OverlayTrigger extends SpectrumElement {
             },
             { once: true }
         );
-        this.overlaidContent = content;
         return OverlayTrigger.openOverlay(
             target,
             interaction,
@@ -266,58 +271,6 @@ export class OverlayTrigger extends SpectrumElement {
                     ? undefined
                     : 'auto',
         };
-    }
-
-    private onTrigger(event: CustomEvent<LongpressEvent>): void {
-        const mouseIsEnteringHoverContent =
-            event.type === 'mouseleave' &&
-            this.open === 'hover' &&
-            (event as unknown as MouseEvent).relatedTarget ===
-                this.overlaidContent;
-        if (mouseIsEnteringHoverContent && this.overlaidContent) {
-            this.overlaidContent.addEventListener(
-                'mouseleave',
-                (event: MouseEvent) => {
-                    const mouseIsEnteringTrigger =
-                        event.relatedTarget === this.targetContent;
-                    if (mouseIsEnteringTrigger) {
-                        return;
-                    }
-                    this.onTrigger(
-                        event as unknown as CustomEvent<LongpressEvent>
-                    );
-                },
-                { once: true }
-            );
-            return;
-        }
-        if (this.disabled) return;
-
-        switch (event.type) {
-            case 'mouseenter':
-            case 'focusin':
-                if (!this.open && this.hoverContent) {
-                    this.open = 'hover';
-                }
-                return;
-            case 'mouseleave':
-            case 'focusout':
-                if (this.open === 'hover') {
-                    this.handleClose();
-                }
-                return;
-            case 'click':
-                if (this.clickContent) {
-                    this.open = event.type;
-                }
-                return;
-            case 'longpress':
-                if (this.longpressContent) {
-                    this._longpressEvent = event;
-                    this.open = event.type;
-                }
-                return;
-        }
     }
 
     private prepareToFocusOverlayContent(overlayContent: HTMLElement): void {
@@ -422,41 +375,6 @@ export class OverlayTrigger extends SpectrumElement {
         }
     }
 
-    private onClickSlotChange(
-        event: Event & { target: HTMLSlotElement }
-    ): void {
-        this.clickContent = this.extractSlotContentFromEvent(event);
-        this.manageOpen();
-    }
-
-    private onLongpressSlotChange(
-        event: Event & { target: HTMLSlotElement }
-    ): void {
-        this.longpressContent = this.extractSlotContentFromEvent(event);
-        this.hasLongpressContent =
-            !!this.longpressContent || !!this.closeLongpressOverlay;
-        this.manageOpen();
-    }
-
-    private onHoverSlotChange(
-        event: Event & { target: HTMLSlotElement }
-    ): void {
-        this.hoverContent = this.extractSlotContentFromEvent(event);
-        this.manageOpen();
-    }
-
-    private onTargetSlotChange(
-        event: Event & { target: HTMLSlotElement }
-    ): void {
-        this.targetContent = this.extractSlotContentFromEvent(event);
-    }
-
-    private extractSlotContentFromEvent(event: Event): HTMLElement | undefined {
-        const slot = event.target as HTMLSlotElement;
-        const nodes = slot.assignedNodes({ flatten: true });
-        return nodes.find((node) => node instanceof HTMLElement) as HTMLElement;
-    }
-
     private openStatePromise = Promise.resolve();
     private openStateResolver!: () => void;
 
@@ -469,5 +387,11 @@ export class OverlayTrigger extends SpectrumElement {
     public override disconnectedCallback(): void {
         this.closeAllOverlays();
         super.disconnectedCallback();
+    }
+
+    protected override willUpdate(): void {
+        if ((this.placement as unknown as 'none') === 'none') {
+            this.placement = undefined;
+        }
     }
 }

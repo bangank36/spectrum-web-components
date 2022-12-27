@@ -116,40 +116,30 @@ export function runSplitButtonTests(
         const el = test.querySelector('sp-split-button') as SplitButton;
 
         await elementUpdated(el);
-        let items = el.querySelectorAll('sp-menu-item');
-        expect(items.length).to.equal(3);
 
         let opened = oneEvent(el, 'sp-opened');
         el.open = true;
         await opened;
 
         expect(el.open).to.be.true;
-        items = el.querySelectorAll('sp-menu-item');
-        expect(items.length).to.equal(0);
 
         let closed = oneEvent(el, 'sp-closed');
         el.open = false;
         await closed;
 
         expect(el.open).to.be.false;
-        items = el.querySelectorAll('sp-menu-item');
-        expect(items.length).to.equal(3);
 
         opened = oneEvent(el, 'sp-opened');
         el.open = true;
         await opened;
 
         expect(el.open).to.be.true;
-        items = el.querySelectorAll('sp-menu-item');
-        expect(items.length).to.equal(0);
 
         closed = oneEvent(el, 'sp-closed');
         el.open = false;
         await closed;
 
         expect(el.open).to.be.false;
-        items = el.querySelectorAll('sp-menu-item');
-        expect(items.length).to.equal(3);
     });
     it('[type="more"] toggles open/close multiple time', async () => {
         const test = await fixture<HTMLDivElement>(
@@ -158,40 +148,30 @@ export function runSplitButtonTests(
         const el = test.querySelector('sp-split-button') as SplitButton;
 
         await elementUpdated(el);
-        let items = el.querySelectorAll('sp-menu-item');
-        expect(items.length).to.equal(3);
 
         let opened = oneEvent(el, 'sp-opened');
         el.open = true;
         await opened;
 
         expect(el.open).to.be.true;
-        items = el.querySelectorAll('sp-menu-item');
-        expect(items.length).to.equal(0);
 
         let closed = oneEvent(el, 'sp-closed');
         el.open = false;
         await closed;
 
         expect(el.open).to.be.false;
-        items = el.querySelectorAll('sp-menu-item');
-        expect(items.length).to.equal(3);
 
         opened = oneEvent(el, 'sp-opened');
         el.open = true;
         await opened;
 
         expect(el.open).to.be.true;
-        items = el.querySelectorAll('sp-menu-item');
-        expect(items.length).to.equal(0);
 
         closed = oneEvent(el, 'sp-closed');
         el.open = false;
         await closed;
 
         expect(el.open).to.be.false;
-        items = el.querySelectorAll('sp-menu-item');
-        expect(items.length).to.equal(3);
     });
     it('receives "focus()"', async () => {
         const test = await fixture<HTMLDivElement>(

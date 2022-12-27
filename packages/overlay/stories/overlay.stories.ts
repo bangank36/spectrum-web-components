@@ -30,6 +30,7 @@ import '@spectrum-web-components/icons-workflow/icons/sp-icon-open-in.js';
 import '@spectrum-web-components/overlay/overlay-trigger.js';
 import { Picker } from '@spectrum-web-components/picker';
 import '@spectrum-web-components/picker/sp-picker.js';
+import '@spectrum-web-components/overlay/sp-overlay.js';
 import '@spectrum-web-components/menu/sp-menu.js';
 import '@spectrum-web-components/menu/sp-menu-item.js';
 import '@spectrum-web-components/menu/sp-menu-divider.js';
@@ -180,7 +181,6 @@ const template = ({
                             slot="click-content"
                             placement="bottom"
                             tip
-                            open
                         >
                             <div class="options-popover-content">
                                 Another Popover
@@ -312,11 +312,12 @@ export const customizedClickContent = (
     args: Properties
 ): TemplateResult => html`
     <style>
-        active-overlay::part(theme) {
-            --styled-div-background-color: var(--spectrum-semantic-cta-background-color-default);
-            --spectrum-button-m-cta-texticon-background-color: rebeccapurple;
+        overlay-trigger {
+            --styled-div-background-color: var(
+                --spectrum-semantic-cta-background-color-default
+            );
+            --spectrum-button-m-accent-fill-texticon-background-color: rebeccapurple;
         }
-    </style>
     </style>
     ${template({
         ...args,
@@ -339,7 +340,7 @@ export const inline = (): TemplateResult => {
     return html`
         <overlay-trigger type="inline">
             <sp-button slot="trigger">Open</sp-button>
-            <sp-overlay slot="click-content">
+            <sp-popover slot="click-content">
                 <sp-button
                     @click=${(event: Event & { target: HTMLElement }): void => {
                         event.target.dispatchEvent(closeEvent);
@@ -347,7 +348,7 @@ export const inline = (): TemplateResult => {
                 >
                     Close
                 </sp-button>
-            </sp-overlay>
+            </sp-popover>
         </overlay-trigger>
         ${extraText}
     `;
@@ -358,7 +359,7 @@ export const replace = (): TemplateResult => {
     return html`
         <overlay-trigger type="replace">
             <sp-button slot="trigger">Open</sp-button>
-            <sp-overlay slot="click-content">
+            <sp-popover slot="click-content">
                 <sp-button
                     @click=${(event: Event & { target: HTMLElement }): void => {
                         event.target.dispatchEvent(closeEvent);
@@ -366,7 +367,7 @@ export const replace = (): TemplateResult => {
                 >
                     Close
                 </sp-button>
-            </sp-overlay>
+            </sp-popover>
         </overlay-trigger>
         ${extraText}
     `;
@@ -377,7 +378,7 @@ export const deep = (): TemplateResult => html`
         <sp-button variant="primary" slot="trigger">
             Open popover 1 with buttons + selfmanaged Tooltips
         </sp-button>
-        <sp-popover dialog slot="click-content" direction="bottom" tip open>
+        <sp-popover dialog slot="click-content" direction="bottom" tip>
             <sp-action-button>
                 <sp-tooltip self-managed placement="bottom" offset="0">
                     My Tooltip 1
@@ -397,7 +398,7 @@ export const deep = (): TemplateResult => html`
         <sp-button variant="primary" slot="trigger">
             Open popover 2 with buttons without ToolTips
         </sp-button>
-        <sp-popover dialog slot="click-content" direction="bottom" tip open>
+        <sp-popover dialog slot="click-content" direction="bottom" tip>
             <sp-action-button>X</sp-action-button>
             <sp-action-button>Y</sp-action-button>
         </sp-popover>
@@ -537,7 +538,7 @@ export const edges = (): TemplateResult => {
                 <br />
                 Left
             </sp-button>
-            <sp-tooltip slot="hover-content" delayed open tip="bottom">
+            <sp-tooltip slot="hover-content" delayed tip="bottom">
                 Triskaidekaphobia and More
             </sp-tooltip>
         </overlay-trigger>
@@ -547,7 +548,7 @@ export const edges = (): TemplateResult => {
                 <br />
                 Right
             </sp-button>
-            <sp-tooltip slot="hover-content" delayed open tip="bottom">
+            <sp-tooltip slot="hover-content" delayed tip="bottom">
                 Triskaidekaphobia and More
             </sp-tooltip>
         </overlay-trigger>
@@ -557,7 +558,7 @@ export const edges = (): TemplateResult => {
                 <br />
                 Left
             </sp-button>
-            <sp-tooltip slot="hover-content" delayed open tip="top">
+            <sp-tooltip slot="hover-content" delayed tip="top">
                 Triskaidekaphobia and More
             </sp-tooltip>
         </overlay-trigger>
@@ -567,7 +568,7 @@ export const edges = (): TemplateResult => {
                 <br />
                 Right
             </sp-button>
-            <sp-tooltip slot="hover-content" delayed open tip="top">
+            <sp-tooltip slot="hover-content" delayed tip="top">
                 Triskaidekaphobia and More
             </sp-tooltip>
         </overlay-trigger>
@@ -591,13 +592,7 @@ export const updated = (): TemplateResult => {
                 <sp-tooltip slot="hover-content" delayed tip="bottom">
                     Click to open popover
                 </sp-tooltip>
-                <sp-popover
-                    dialog
-                    slot="click-content"
-                    position="bottom"
-                    tip
-                    open
-                >
+                <sp-popover dialog slot="click-content" position="bottom" tip>
                     <div class="options-popover-content">
                         <sp-slider
                             value="5"
@@ -616,7 +611,6 @@ export const updated = (): TemplateResult => {
                                 slot="click-content"
                                 placement="bottom"
                                 tip
-                                open
                             >
                                 <div class="options-popover-content">
                                     Another Popover
@@ -1150,71 +1144,69 @@ export const accordion = (): TemplateResult => {
             <sp-button variant="primary" slot="trigger">
                 Open overlay w/ accordion
             </sp-button>
-            <div slot="click-content" style="max-height: 100%;display: flex;">
-                <sp-popover
-                    open
-                    dialog
-                    style="overflow-y: scroll;position: static;"
+            <sp-popover
+                dialog
+                slot="click-content"
+                style="overflow-y: scroll;position: static;"
+            >
+                <sp-accordion
+                    allow-multiple
+                    @sp-accordion-item-toggle=${handleToggle}
                 >
-                    <sp-accordion
-                        allow-multiple
-                        @sp-accordion-item-toggle=${handleToggle}
-                    >
-                        <sp-accordion-item label="Some things">
-                            <p>
-                                Thing
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                more things
-                            </p>
-                        </sp-accordion-item>
-                        <sp-accordion-item label="Other things">
-                            <p>
-                                Thing
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                more things
-                            </p>
-                        </sp-accordion-item>
-                        <sp-accordion-item label="More things">
-                            <p>
-                                Thing
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                more things
-                            </p>
-                        </sp-accordion-item>
-                        <sp-accordion-item label="Additional things">
-                            <p>
-                                Thing
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                <br />
-                                more things
-                            </p>
-                        </sp-accordion-item>
-                    </sp-accordion>
-                </sp-popover>
-            </div>
+                    <sp-accordion-item label="Some things">
+                        <p>
+                            Thing
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            more things
+                        </p>
+                    </sp-accordion-item>
+                    <sp-accordion-item label="Other things">
+                        <p>
+                            Thing
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            more things
+                        </p>
+                    </sp-accordion-item>
+                    <sp-accordion-item label="More things">
+                        <p>
+                            Thing
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            more things
+                        </p>
+                    </sp-accordion-item>
+                    <sp-accordion-item label="Additional things">
+                        <p>
+                            Thing
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            <br />
+                            more things
+                        </p>
+                    </sp-accordion-item>
+                </sp-accordion>
+            </sp-popover>
         </overlay-trigger>
     `;
 };

@@ -24,7 +24,7 @@ import '@spectrum-web-components/overlay/overlay-trigger.js';
 import { a11ySnapshot, findAccessibilityNode } from '@web/test-runner-commands';
 import { Tooltip } from '@spectrum-web-components/tooltip';
 
-describe('Overlay Trigger - Lifecycle Methods', () => {
+describe.skip('Overlay Trigger - Lifecycle Methods', () => {
     it('calls the overlay lifecycle (willOpen/Close)', async () => {
         const el = await fixture<OverlayTrigger>(html`
             <overlay-trigger placement="right-start">

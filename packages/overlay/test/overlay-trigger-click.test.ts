@@ -29,7 +29,7 @@ import '@spectrum-web-components/overlay/overlay-trigger.js';
 import { spy } from 'sinon';
 import { ActionButton } from '@spectrum-web-components/action-button';
 
-describe('Overlay Trigger - Click', () => {
+describe.skip('Overlay Trigger - Click', () => {
     it('displays `click` declaratively', async () => {
         const openedSpy = spy();
         const closedSpy = spy();

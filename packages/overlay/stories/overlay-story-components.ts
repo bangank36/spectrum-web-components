@@ -290,7 +290,6 @@ class RecursivePopover extends LitElement {
                     slot="click-content"
                     direction="${this.placement}"
                     tip
-                    open
                 >
                     ${this.depth < MAX_DEPTH
                         ? html`

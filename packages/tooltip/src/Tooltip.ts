@@ -74,7 +74,7 @@ export class Tooltip extends SpectrumElement {
     public placement: Placement = 'top';
 
     @query('#tip')
-    private tipElement!: HTMLSpanElement;
+    public tipElement!: HTMLSpanElement;
 
     /* Ensure that a '' value for `variant` removes the attribute instead of a blank value */
     private _variant = '';

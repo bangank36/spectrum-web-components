@@ -18,9 +18,12 @@ import { fileURLToPath } from 'url';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const projectDir = path.resolve(__dirname, '..', '..', '..');
-const indexDir = path.resolve(projectDir, 'projects/documentation/dist');
-const indexPath = path.resolve(indexDir, 'searchIndex.json');
-fs.mkdirSync(indexDir, { recursive: true });
+const localDir = path.resolve(projectDir, 'projects/documentation/_site/src/');
+const buildDir = path.resolve(projectDir, 'projects/documentation/dist');
+const localIndexPath = path.resolve(localDir, 'searchIndex.json');
+const buildIndexPath = path.resolve(buildDir, 'searchIndex.json');
+fs.mkdirSync(localDir, { recursive: true });
+fs.mkdirSync(buildDir, { recursive: true });
 
 function nameToTitle(name) {
     return name.replace(/((^|\-)(\w))/gm, (match, p1, p2, p3) => {
@@ -36,12 +39,9 @@ async function main() {
     const documents = [];
 
     // Components
-    for await (const path of globby.stream(
-        `${projectDir}/(packages|tools)/**/*.md`,
-        {
-            ignore: ['**/node_modules/**'],
-        }
-    )) {
+    for await (const path of globby.stream(`${projectDir}/packages/**/*.md`, {
+        ignore: ['**/node_modules/**'],
+    })) {
         let componentName = /([^/]+)\/([a-zA-Z-]+)\.md$/.exec(path)[1];
         const fileName = /([a-zA-Z-]+)\.md$/.exec(path)[0];
         if (fileName === 'CHANGELOG.md') {
@@ -52,45 +52,91 @@ async function main() {
         }
         const content = await fs.readFile(path, { encoding: 'utf8' });
         const body = content.replace(/```((.|\s)*?)```/g, '');
+        const title = nameToTitle(componentName);
         documents.push({
-            title: nameToTitle(componentName),
+            title,
             body,
-            url: `/${
-                process.env.SWC_DIR ? `${process.env.SWC_DIR}/` : ''
-            }components/${componentName}`,
+            metadata: JSON.stringify({
+                category: 'Components',
+                name: title,
+                url: `/${
+                    process.env.SWC_DIR ? `${process.env.SWC_DIR}/` : ''
+                }components/${componentName}`,
+            }),
+        });
+    }
+
+    // Tools
+    for await (const path of globby.stream(`${projectDir}/tools/**/*.md`, {
+        ignore: ['**/node_modules/**'],
+    })) {
+        let componentName = /([^/]+)\/([a-zA-Z-]+)\.md$/.exec(path)[1];
+        const fileName = /([a-zA-Z-]+)\.md$/.exec(path)[0];
+        if (fileName === 'CHANGELOG.md') {
+            continue;
+        }
+        if (fileName !== 'README.md') {
+            componentName = fileName.replace('.md', '');
+        }
+        const content = await fs.readFile(path, { encoding: 'utf8' });
+        const body = content.replace(/```((.|\s)*?)```/g, '');
+        const title = nameToTitle(componentName);
+        documents.push({
+            title,
+            body,
+            metadata: JSON.stringify({
+                category: 'Tools',
+                name: title,
+                url: `/${
+                    process.env.SWC_DIR ? `${process.env.SWC_DIR}/` : ''
+                }tools/${componentName}`,
+            }),
         });
     }
 
     // Guides
     for await (const path of globby.stream(
-        `${projectDir}/documentation/guides/*.md`,
+        [
+            `${projectDir}/projects/documentation/content/guides/*.md`,
+            `${projectDir}/projects/documentation/content/migrations/*.md`,
+            `${projectDir}/projects/documentation/content/getting-started.md`,
+            `${projectDir}/projects/documentation/content/dev-mode.md`,
+        ],
         {
             ignore: ['**/node_modules/**'],
         }
     )) {
         const guideName = /\/([^/]+).md$/.exec(path)[1];
+        const guideDir = path.split('/').at(-2);
         const content = await fs.readFile(path, { encoding: 'utf8' });
         const body = content.replace(/```((.|\s)*?)```/g, '');
+        const title = nameToTitle(guideName);
         documents.push({
-            title: nameToTitle(guideName),
+            title,
             body,
-            url: `/${
-                process.env.SWC_DIR ? `${process.env.SWC_DIR}/` : ''
-            }guides/${guideName}`,
+            metadata: JSON.stringify({
+                category: 'Guides',
+                name: title,
+                url: `/${process.env.SWC_DIR ? `${process.env.SWC_DIR}/` : ''}${
+                    guideDir !== 'content' ? `${guideDir}/` : ''
+                }${guideName}`,
+            }),
         });
     }
 
     const index = lunr(function () {
-        this.ref('url');
+        this.ref('metadata');
         this.field('title', { boost: 10 });
         this.field('body');
+        this.field('category');
 
         for (const document of documents) {
             this.add(document);
         }
     });
 
-    await fs.writeFile(indexPath, JSON.stringify(index));
+    await fs.writeFile(localIndexPath, JSON.stringify(index));
+    await fs.writeFile(buildIndexPath, JSON.stringify(index));
 }
 
 main();

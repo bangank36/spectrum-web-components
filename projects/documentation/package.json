@@ -15,6 +15,7 @@
         "build:postcss": "wireit",
         "build:production": "wireit",
         "build:search-index": "wireit",
+        "build:search-index:prod": "wireit",
         "build:tsc": "wireit",
         "copy-docs": "wireit",
         "serve": "wireit",
@@ -32,7 +33,7 @@
         "@rollup/plugin-alias": "^3.1.9",
         "@rollup/plugin-commonjs": "^21.0.1",
         "@rollup/plugin-json": "^5.0.0",
-        "@rollup/plugin-node-resolve": "^13.1.3",
+        "@rollup/plugin-node-resolve": "^15.0.1",
         "@toycode/markdown-it-class": "^1.2.4",
         "@types/lunr": "^2.3.3",
         "@types/prismjs": "^1.16.6",
@@ -50,7 +51,7 @@
         "posthtml-match-helper": "^1.0.3",
         "prismjs": "^1.26.0",
         "rimraf": "^3.0.2",
-        "rollup": "^2.68.0",
+        "rollup": "^2.78.0",
         "rollup-plugin-lit-css": "^4.0.0",
         "rollup-plugin-minify-html-literals": "^1.2.6",
         "rollup-plugin-styles": "^4.0.0",
@@ -72,6 +73,9 @@
             "dependencies": [
                 {
                     "script": "build:assets"
+                },
+                {
+                    "script": "build:search-index"
                 }
             ]
         },
@@ -85,9 +89,6 @@
                 },
                 {
                     "script": "build:postcss"
-                },
-                {
-                    "script": "build:search-index"
                 }
             ]
         },
@@ -138,6 +139,9 @@
             "dependencies": [
                 {
                     "script": "build:assets"
+                },
+                {
+                    "script": "build:search-index:prod"
                 }
             ]
         },
@@ -146,7 +150,18 @@
             "files": [
                 "../../packages/*/*.md",
                 "../../tools/*/*.md",
-                "scripts/build-search-index.js"
+                "./scripts/build-search-index.js"
+            ],
+            "output": [
+                "dist/searchIndex.json"
+            ]
+        },
+        "build:search-index:prod": {
+            "command": "SWC_DIR=spectrum-web-components node scripts/build-search-index.js",
+            "files": [
+                "../../packages/*/*.md",
+                "../../tools/*/*.md",
+                "./scripts/build-search-index.js"
             ],
             "output": [
                 "dist/searchIndex.json"
@@ -195,6 +210,10 @@
             "dependencies": [
                 {
                     "script": "build:assets",
+                    "cascade": false
+                },
+                {
+                    "script": "build:search-index",
                     "cascade": false
                 }
             ]

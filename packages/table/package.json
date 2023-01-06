@@ -64,6 +64,10 @@
         "./src/table-head.css.js": "./src/table-head.css.js",
         "./src/table-row.css.js": "./src/table-row.css.js",
         "./src/table.css.js": "./src/table.css.js",
+        "./elements.js": {
+            "development": "./elements.dev.js",
+            "default": "./elements.js"
+        },
         "./sp-table-body.js": {
             "development": "./sp-table-body.dev.js",
             "default": "./sp-table-body.js"
@@ -111,7 +115,7 @@
         "lit-html"
     ],
     "dependencies": {
-        "@lit-labs/virtualizer": "^0.7.1",
+        "@lit-labs/virtualizer": "^1.0.1",
         "@spectrum-web-components/base": "^0.7.2",
         "@spectrum-web-components/checkbox": "^0.14.6",
         "@spectrum-web-components/icon": "^0.12.5",

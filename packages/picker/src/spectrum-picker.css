@@ -49,6 +49,11 @@ governing permissions and limitations under the License.
     --spectrum-picker-font-size: var(
         --spectrum-font-size-100
     ); /* .spectrum-Picker */
+    --spectrum-picker-placeholder-font-style-default: italic;
+    --spectrum-picker-placeholder-cjk-font-style: normal;
+    --spectrum-picker-placeholder-font-style: var(
+        --spectrum-picker-placeholder-font-style-default
+    );
     --spectrum-picker-min-inline-size: var(
         --spectrum-picker-minimum-width-multiplier
     );
@@ -151,6 +156,15 @@ governing permissions and limitations under the License.
         --spectrum-focus-indicator-color
     );
 }
+#button:lang(ja),
+#button:lang(ko),
+#button:lang(zh) {
+    --spectrum-picker-placeholder-font-style: var(
+        --spectrum-picker-placeholder-cjk-font-style
+    ); /* .spectrum-Picker:lang(ja),
+   * .spectrum-Picker:lang(zh),
+   * .spectrum-Picker:lang(ko) */
+}
 :host([size='s']) {
     --spectrum-picker-font-size: var(
         --spectrum-font-size-75
@@ -237,6 +251,7 @@ governing permissions and limitations under the License.
 }
 @media (forced-colors: active) {
     #button {
+        --highcontrast-picker-focus-indicator-color: CanvasText;
         --highcontrast-picker-border-color-default: ButtonText;
         --highcontrast-picker-border-color-active: ButtonText;
         --highcontrast-picker-border-color-key-focus: Highlight;
@@ -255,7 +270,6 @@ governing permissions and limitations under the License.
         --highcontrast-picker-icon-color-hover-open: ButtonText;
         --highcontrast-picker-icon-color-key-focus: Highlight;
         --highcontrast-picker-icon-color-error-default: ButtonText;
-        --highcontrast-picker-focus-indicator-color: Highlight;
     }
     #button:disabled,
     :host([disabled]) #button {
@@ -832,7 +846,10 @@ governing permissions and limitations under the License.
             var(--spectrum-picker-font-color-default)
         )
     );
-    font-style: italic;
+    font-style: var(
+        --mod-picker-placeholder-font-style,
+        var(--spectrum-picker-placeholder-font-style)
+    );
     font-weight: 400; /* .spectrum-Picker-label.is-placeholder */
     transition: color
         var(
